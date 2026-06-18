@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>颜色选择器 - 在线配色/渐变色生成/颜色格式转换 - 无代码工具集</title>
+<meta name="description" content="免费在线颜色选择器，支持HEX/RGB/HSL格式转换，自动生成渐变色方案和配色建议，一键复制颜色值。">
+<meta name="keywords" content="颜色选择器,渐变色生成,配色方案,HEX转RGB,在线配色工具,设计师工具">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column}
+header{text-align:center;padding:36px 20px 20px}
+header h1{font-size:clamp(1.5rem,3.5vw,2.2rem);background:linear-gradient(90deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.container{max-width:1100px;margin:0 auto;padding:0 20px 32px;width:100%;flex:1}
+.panel{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;margin-bottom:16px}
+.panel h3{font-size:1rem;color:#aaa;margin-bottom:12px}
+.color-main{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.color-preview{width:160px;height:160px;border-radius:14px;border:2px solid rgba(255,255,255,.15);transition:background .2s;flex-shrink:0}
+.controls{flex:1;min-width:260px}
+.controls label{display:block;color:#aaa;font-size:.85rem;margin-bottom:4px;margin-top:10px}
+.controls input[type="color"]{width:100%;height:48px;border:none;border-radius:8px;cursor:pointer;background:none;padding:0}
+.controls input[type="text"]{width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:10px 12px;color:#e0e0e0;font-family:'Fira Code',Consolas,monospace;font-size:.95rem}
+.controls input[type="text"]:focus{outline:none;border-color:#7b2ff7}
+.controls input[type="range"]{width:100%;accent-color:#7b2ff7}
+.format-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.format-item{flex:1;min-width:140px;background:rgba(0,0,0,.3);border-radius:8px;padding:10px 12px}
+.format-item .fmt-label{color:#aaa;font-size:.78rem;margin-bottom:4px}
+.format-item .fmt-value{color:#ffd43b;font-family:'Fira Code',Consolas,monospace;font-size:.9rem;word-break:break-all}
+.copy-btn{background:rgba(0,210,255,.2);border:1px solid rgba(0,210,255,.4);color:#00d2ff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;transition:all .2s;margin-left:8px;vertical-align:middle}
+.copy-btn:hover{background:rgba(0,210,255,.4)}
+.gradient-row{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.gradient-row input[type="color"]{width:60px;height:44px;border:none;border-radius:8px;cursor:pointer;background:none}
+.gradient-row span{color:#aaa;font-size:.9rem}
+.gradient-preview{height:80px;border-radius:10px;border:1px solid rgba(255,255,255,.1);transition:background .3s}
+.gradient-css{background:rgba(0,0,0,.3);border-radius:8px;padding:12px;font-family:'Fira Code',Consolas,monospace;font-size:.85rem;color:#c8f7c5;margin-top:8px;word-break:break-all}
+.scheme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.scheme-card{border-radius:10px;padding:16px;text-align:center}
+.scheme-card .scheme-name{font-size:.85rem;color:rgba(255,255,255,.8);margin-top:8px}
+.swatches{display:flex;gap:4px;margin-bottom:6px}
+.swatch{flex:1;height:40px;border-radius:6px;cursor:pointer;transition:transform .15s}
+.swatch:hover{transform:scaleY(1.15)}
+.copy-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,210,255,.9);color:#000;padding:10px 24px;border-radius:8px;font-size:.9rem;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.copy-toast.show{opacity:1}
+@media(max-width:600px){.color-main{flex-direction:column}.color-preview{width:100%;height:120px}}
+</style>
+</head>
+<body>
+<header><h1>🎨 颜色选择器</h1></header>
+<div class="container">
+<div class="panel">
+<h3>🎯 颜色选择</h3>
+<div class="color-main">
+<div class="color-preview" id="preview" style="background:#7b2ff7"></div>
+<div class="controls">
+<label>选择颜色</label>
+<input type="color" id="colorPicker" value="#7b2ff7">
+<label>手动输入 HEX</label>
+<input type="text" id="hexInput" value="#7b2ff7" maxlength="7">
+<label>H 色调 (0-360)</label>
+<input type="range" id="hSlider" min="0" max="360" value="268">
+<label>S 饱和度 (0-100%)</label>
+<input type="range" id="sSlider" min="0" max="100" value="92">
+<label>L 亮度 (0-100%)</label>
+<input type="range" id="lSlider" min="0" max="100" value="56">
+</div>
+</div>
+<div class="format-row">
+<div class="format-item"><div class="fmt-label">HEX</div><div class="fmt-value" id="hexVal">#7b2ff7<span class="copy-btn" onclick="copyVal('hex')">复制</span></div></div>
+<div class="format-item"><div class="fmt-label">RGB</div><div class="fmt-value" id="rgbVal">rgb(123, 47, 247)<span class="copy-btn" onclick="copyVal('rgb')">复制</span></div></div>
+<div class="format-item"><div class="fmt-label">HSL</div><div class="fmt-value" id="hslVal">hsl(268, 92%, 56%)<span class="copy-btn" onclick="copyVal('hsl')">复制</span></div></div>
+</div>
+</div>
+<div class="panel">
+<h3>🌈 渐变色生成器</h3>
+<div class="gradient-row">
+<input type="color" id="gradStart" value="#7b2ff7">
+<span>→</span>
+<input type="color" id="gradEnd" value="#00d2ff">
+<span>|</span>
+<select id="gradDir" style="background:rgba(0,0,0,.35);color:#e0e0e0;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:8px">
+<option value="to right">→ 水平向右</option>
+<option value="to left">← 水平向左</option>
+<option value="to bottom">↓ 垂直向下</option>
+<option value="to top">↑ 垂直向上</option>
+<option value="to bottom right">↘ 对角线</option>
+<option value="radial">◎ 径向</option>
+</select>
+</div>
+<div class="gradient-preview" id="gradPreview"></div>
+<div class="gradient-css" id="gradCSS"></div>
+<div style="margin-top:10px"><button class="copy-btn" onclick="copyGrad()" style="font-size:.9rem;padding:8px 20px">📋 复制 CSS 代码</button></div>
+</div>
+<div class="panel">
+<h3>💡 智能配色方案</h3>
+<div class="scheme-grid" id="schemeGrid"></div>
+</div>
+</div>
+<div class="copy-toast" id="toast">已复制到剪贴板！</div>
+<footer>
+<div class="tools-links">
+<a href="json-formatter.html">JSON 格式化</a>
+<a href="regex-tester.html">正则测试器</a>
+<a href="color-picker.html">颜色选择器</a>
+<a href="index.html">← 工具列表</a>
+</div>
+<div class="cross-links">
+<a href="/ai-daily-news/">🤖 AI日报</a>
+<a href="/english-interview/">🚀 English Interview</a>
+<a href="/chuangye-weekly/">🌏 出海工具周报</a>
+<a href="/indie-dev-weekly/">🧑‍💻 独立开发者周刊</a>
+<a href="/nocode-tools/">🔧 NoCode工具导航</a>
+<a href="/cn-seo-site/">🔍 中文SEO工具箱</a>
+</div>
+<p class="copyright">© 2025 AI站群旗下站点</p>
+</footer>
+<script>
+const picker=document.getElementById('colorPicker'),hexIn=document.getElementById('hexInput'),hSl=document.getElementById('hSlider'),sSl=document.getElementById('sSlider'),lSl=document.getElementById('lSlider'),prev=document.getElementById('preview');
+function hexToRgb(h){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return[r,g,b]}
+function rgbToHsl(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;if(max===min){h=s=0}else{const d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:h=((g-b)/d+(g<b?6:0))*60;break;case g:h=((b-r)/d+2)*60;break;case b:h=((r-g)/d+4)*60;break}}return[Math.round(h),Math.round(s*100),Math.round(l*100)]}
+function hslToHex(h,s,l){s/=100;l/=100;const a=s*Math.min(l,1-l);const f=n=>{const k=(n+h/30)%12;const color=l-a*Math.max(Math.min(k-3,9-k,1),-1);return Math.round(255*color).toString(16).padStart(2,'0')};return`#${f(0)}${f(8)}${f(4)}`}
+function updateFromPicker(){const h=parseInt(hSl.value),s=parseInt(sSl.value),l=parseInt(lSl.value);const hex=hslToHex(h,s,l);picker.value=hex;hexIn.value=hex;prev.style.background=hex;const[r,g,b]=hexToRgb(hex);document.getElementById('hexVal').innerHTML=`${hex}<span class="copy-btn" onclick="copyVal('hex')">复制</span>`;document.getElementById('rgbVal').innerHTML=`rgb(${r}, ${g}, ${b})<span class="copy-btn" onclick="copyVal('rgb')">复制</span>`;document.getElementById('hslVal').innerHTML=`hsl(${h}, ${s}%, ${l}%)<span class="copy-btn" onclick="copyVal('hsl')">复制</span>`;updateGradients();updateSchemes(h,s,l)}
+function updateFromHex(){let v=hexIn.value.trim();if(!v.startsWith('#'))v='#'+v;if(/^#[0-9a-fA-F]{6}$/.test(v)){const[r,g,b]=hexToRgb(v);const[h,s,l]=rgbToHsl(r,g,b);hSl.value=h;sSl.value=s;lSl.value=l;picker.value=v;prev.style.background=v;const[r2,g2,b2]=hexToRgb(v);document.getElementById('hexVal').innerHTML=`${v}<span class="copy-btn" onclick="copyVal('hex')">复制</span>`;document.getElementById('rgbVal').innerHTML=`rgb(${r2}, ${g2}, ${b2})<span class="copy-btn" onclick="copyVal('rgb')">复制</span>`;document.getElementById('hslVal').innerHTML=`hsl(${h}, ${s}%, ${l}%)<span class="copy-btn" onclick="copyVal('hsl')">复制</span>`;updateGradients();updateSchemes(h,s,l)}}
+function updateGradients(){const s=document.getElementById('gradStart').value,e=document.getElementById('gradEnd').value,d=document.getElementById('gradDir').value;const bg=d==='radial'?`radial-gradient(circle,${s},${e})`:`linear-gradient(${d},${s},${e})`;document.getElementById('gradPreview').style.background=bg;document.getElementById('gradCSS').textContent=`background: ${bg};`}
+function updateSchemes(h,s,l){const schemes=[{name:'互补色',colors:[h,(h+180)%360].map(x=>hslToHex(x,s,l))},{name:'类似色',colors:[(h-30+360)%360,h,(h+30)%360].map(x=>hslToHex(x,s,l))},{name:'三角色',colors:[h,(h+120)%360,(h+240)%360].map(x=>hslToHex(x,s,l))},{name:'分裂互补',colors:[h,(h+150)%360,(h+210)%360].map(x=>hslToHex(x,s,l))},{name:'分割互补',colors:[h,(h+180-30+360)%360,(h+180+30)%360].map(x=>hslToHex(x,s,l))},{name:'单色',colors:[hslToHex(h,s,Math.max(15,l-20)),hslToHex(h,s,l),hslToHex(h,s,Math.min(85,l+20))]};
+document.getElementById('schemeGrid').innerHTML=schemes.map(sc=>`<div class="scheme-card" style="background:${sc.colors[0]}33;border:1px solid ${sc.colors[0]}55"><div class="swatches">${sc.colors.map(c=>`<div class="swatch" style="background:${c}" onclick="copyVal('raw','${c}')"></div>`).join('')}</div><div class="scheme-name">${sc.name}</div></div>`).join('')}
+function copyVal(type,val){let t;if(type==='hex')t=document.getElementById('hexVal').textContent.replace('复制','').trim();else if(type==='rgb')t=document.getElementById('rgbVal').textContent.replace('复制','').trim();else if(type==='hsl')t=document.getElementById('hslVal').textContent.replace('复制','').trim();else t=val||'';navigator.clipboard.writeText(t);const toast=document.getElementById('toast');toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1500)}
+function copyGrad(){const css=document.getElementById('gradCSS').textContent.replace('background: ','');navigator.clipboard.writeText(css);const toast=document.getElementById('toast');toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1500)}
+picker.addEventListener('input',()=>{const[r,g,b]=hexToRgb(picker.value);const[h,s,l]=rgbToHsl(r,g,b);hSl.value=h;sSl.value=s;lSl.value=l;updateFromPicker()});
+hexIn.addEventListener('input',updateFromHex);hSl.addEventListener('input',updateFromPicker);sSl.addEventListener('input',updateFromPicker);lSl.addEventListener('input',updateFromPicker);
+document.getElementById('gradStart').addEventListener('input',updateGradients);document.getElementById('gradEnd').addEventListener('input',updateGradients);document.getElementById('gradDir').addEventListener('change',updateGradients);
+updateFromPicker();
+</script>
+</body>
+</html>

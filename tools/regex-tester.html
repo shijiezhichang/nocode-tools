@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>正则表达式测试器 - 在线正则测试与匹配高亮 - 无代码工具集</title>
+<meta name="description" content="免费在线正则表达式测试器，实时高亮匹配结果，显示捕获组和匹配统计，内置常用正则速查表。">
+<meta name="keywords" content="正则表达式,正则测试,正则匹配,在线工具,开发者工具,regex">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column}
+header{text-align:center;padding:36px 20px 20px}
+header h1{font-size:clamp(1.5rem,3.5vw,2.2rem);background:linear-gradient(90deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.container{max-width:1100px;margin:0 auto;padding:0 20px 32px;width:100%;flex:1}
+.panel{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;margin-bottom:16px}
+.panel h3{font-size:1rem;color:#aaa;margin-bottom:10px}
+.regex-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.regex-input{flex:1;min-width:200px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:12px 14px;color:#ffd43b;font-family:'Fira Code',Consolas,monospace;font-size:1rem}
+.regex-input:focus{outline:none;border-color:#7b2ff7}
+.flags{display:flex;gap:6px;align-items:center}
+.flags label{color:#aaa;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:3px}
+textarea.test-area{width:100%;min-height:160px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;color:#e0e0e0;font-family:'Fira Code',Consolas,monospace;font-size:.88rem;resize:vertical;line-height:1.6}
+textarea.test-area:focus{outline:none;border-color:rgba(123,47,247,.6)}
+.matches{margin-top:12px}
+.match-item{background:rgba(0,210,255,.08);border:1px solid rgba(0,210,255,.2);border-radius:8px;padding:12px;margin-bottom:8px}
+.match-item .match-text{color:#ffd43b;font-weight:bold;font-size:1rem}
+.match-item .match-detail{color:#aaa;font-size:.85rem;margin-top:4px}
+.match-item .capture-group{color:#51cf66;font-size:.85rem;margin-top:2px}
+.highlight-box{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;min-height:100px;font-family:'Fira Code',Consolas,monospace;font-size:.88rem;line-height:1.8;white-space:pre-wrap;word-break:break-all;margin-top:12px}
+.highlight-box .hl{background:rgba(255,212,59,.35);border-radius:3px;padding:1px 2px;color:#ffe066}
+.stats{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px}
+.stat{background:rgba(123,47,247,.15);padding:8px 16px;border-radius:8px;font-size:.9rem}
+.stat span{color:#d4b5ff;font-weight:bold}
+.ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.ref-item{background:rgba(0,0,0,.2);border-radius:8px;padding:12px}
+.ref-item .ref-label{color:#00d2ff;font-size:.82rem;margin-bottom:4px}
+.ref-item .ref-pattern{color:#ffd43b;font-family:'Fira Code',Consolas,monospace;font-size:.85rem}
+.ref-item .ref-desc{color:#aaa;font-size:.82rem;margin-top:2px}
+@media(max-width:600px){.regex-row{flex-direction:column}.flags{justify-content:flex-start}}
+</style>
+</head>
+<body>
+<header><h1>🔎 正则表达式测试器</h1></header>
+<div class="container">
+<div class="panel">
+<h3>📝 正则表达式</h3>
+<div class="regex-row">
+<input class="regex-input" id="regex" placeholder="输入正则表达式，例如：\b[\w.-]+@[\w.-]+\.\w+\b" value="">
+<div class="flags">
+<label><input type="checkbox" id="f-i" onchange="test()"> 忽略大小写</label>
+<label><input type="checkbox" id="f-m" onchange="test()"> 多行模式</label>
+</div>
+</div>
+<div id="error" style="color:#ff6b6b;font-size:.88rem;min-height:20px"></div>
+</div>
+<div class="panel">
+<h3>📄 测试文本</h3>
+<textarea class="test-area" id="testText" placeholder="在此粘贴要测试的文本...">请联系我：admin@example.com 或 support@test.org
+电话号码：138-0013-8000
+日期：2025-01-15 和 2025/06/01
+URL：https://www.example.com/path?q=test</textarea>
+</div>
+<div class="panel">
+<h3>📊 匹配统计</h3>
+<div class="stats" id="stats"></div>
+</div>
+<div class="panel">
+<h3>🔍 匹配结果</h3>
+<div class="matches" id="matches"></div>
+</div>
+<div class="panel">
+<h3>💡 全文高亮</h3>
+<div class="highlight-box" id="highlightBox"></div>
+</div>
+<div class="panel">
+<h3>📚 常用正则速查表</h3>
+<div class="ref-grid" id="refGrid"></div>
+</div>
+</div>
+<footer>
+<div class="tools-links">
+<a href="json-formatter.html">JSON 格式化</a>
+<a href="regex-tester.html">正则测试器</a>
+<a href="color-picker.html">颜色选择器</a>
+<a href="index.html">← 工具列表</a>
+</div>
+<div class="cross-links">
+<a href="/ai-daily-news/">🤖 AI日报</a>
+<a href="/english-interview/">🚀 English Interview</a>
+<a href="/chuangye-weekly/">🌏 出海工具周报</a>
+<a href="/indie-dev-weekly/">🧑‍💻 独立开发者周刊</a>
+<a href="/nocode-tools/">🔧 NoCode工具导航</a>
+<a href="/cn-seo-site/">🔍 中文SEO工具箱</a>
+</div>
+<p class="copyright">© 2025 AI站群旗下站点</p>
+</footer>
+<script>
+const regexInput=document.getElementById('regex'),testArea=document.getElementById('testText'),errorEl=document.getElementById('error'),matchesEl=document.getElementById('matches'),statsEl=document.getElementById('stats'),highlightBox=document.getElementById('highlightBox');
+function getFlags(){let f='g';if(document.getElementById('f-i').checked)f+='i';if(document.getElementById('f-m').checked)f+='m';return f}
+function test(){
+const pat=regexInput.value.trim();
+errorEl.textContent='';matchesEl.innerHTML='';statsEl.innerHTML='';highlightBox.textContent=testArea.value;
+if(!pat){return}
+try{const re=new RegExp(pat,getFlags());const text=testArea.value;const allMatches=[...text.matchAll(new RegExp(pat,getFlags().replace('g','')))];
+if(allMatches.length===0){statsEl.innerHTML='<div class="stat">匹配数 <span>0</span></div>';return}
+statsEl.innerHTML=`<div class="stat">匹配数 <span>${allMatches.length}</span></div><div class="stat">匹配字符 <span>${allMatches.reduce((s,m)=>s+m[0].length,0)}</span></div>`;
+let html='';allMatches.forEach((m,i)=>{let g='';if(m.groups){Object.entries(m.groups).forEach(([k,v])=>{g+=`  组"${k}": ${v}`})}else if(m.length>1){for(let j=1;j<m.length;j++){g+=`  组${j}: ${m[j]||'(空)'}`}}
+html+=`<div class="match-item"><div class="match-text">[${i+1}] "${m[0]}"</div><div class="match-detail">位置 ${m.index}-${m.index+m[0].length}${g?'<br>'+g:''}</div></div>`});
+matchesEl.innerHTML=html;
+let highlighted='';let lastIndex=0;allMatches.forEach(m=>{highlighted+=escapeHtml(text.slice(lastIndex,m.index));highlighted+=`<span class="hl">${escapeHtml(m[0])}</span>`;lastIndex=m.index+m[0].length});
+highlighted+=escapeHtml(text.slice(lastIndex));highlightBox.innerHTML=highlighted}catch(e){errorEl.textContent='❌ '+e.message}}
+function escapeHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+const refs=[['\\b\\w+@\\w+\\.\\w+','邮箱地址'],['\\d{3}-\\d{4}-\\d{4}','中国大陆手机号'],['\\d{4}-\\d{2}-\\d{2}','YYYY-MM-DD 日期'],['https?://\\S+','URL 链接'],['\\b[A-Z][a-z]+\\b','首字母大写单词'],['\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b','IPv4 地址'],['\\p{Unified_Ideograph}','中文字符(Unicode)'],['\\d{4}/\\d{2}/\\d{2}','YYYY/MM/DD 日期']];
+document.getElementById('refGrid').innerHTML=refs.map(([p,d])=>`<div class="ref-item"><div class="ref-label">${d}</div><div class="ref-pattern">${p}</div></div>`).join('');
+regexInput.addEventListener('input',test);testArea.addEventListener('input',test);
+</script>
+</body>
+</html>
